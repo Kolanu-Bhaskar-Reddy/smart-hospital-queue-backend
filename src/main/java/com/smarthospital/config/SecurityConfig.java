@@ -1,3 +1,4 @@
+
 package com.smarthospital.config;
 
 import java.util.Arrays;
@@ -20,7 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${app.cors.origins}")
+    @Value("${app.cors.origins:http://localhost:5173}")
     private String allowedOrigins;
 
     @Bean
@@ -30,7 +31,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**", "/api/departments/**", "/api/doctors/**").permitAll()
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/departments/**",
+                    "/api/doctors/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             );
 
@@ -40,17 +45,26 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+
         config.setAllowedOrigins(
             Arrays.stream(allowedOrigins.split(","))
-                  .map(String::trim)
-                  .toList()
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList()
         );
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        config.setAllowedMethods(
+            List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+        );
+
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 
